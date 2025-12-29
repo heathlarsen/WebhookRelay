@@ -1,0 +1,25 @@
+{
+  "server": {
+    "listen_addr": ":8080",
+    "base_path": "/hook",
+    "forward_timeout_ms": 10000,
+    "concurrency": 50
+  },
+  "relays": [
+    {
+      "name": "Pre-defined Listener Example",
+      "listen_path": "/stripe",
+      "methods": ["POST"],
+      "destinations": [
+        { "url": "https://example.com/ingest/stripe" },
+        { "url": "https://example.net/stripe" }
+      ]
+    },
+    {
+      "name": "Generated Listener Example",
+      "destinations": [{ "url": "http://internal-service-a/webhooks" }]
+    }
+  ]
+}
+
+
