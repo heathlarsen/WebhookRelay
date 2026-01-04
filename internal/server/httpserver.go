@@ -19,7 +19,7 @@ import (
 )
 
 type Forwarder interface {
-	ForwardAsync(ctx context.Context, reqID string, relayName string, inbound *http.Request, body []byte, destinations []config.DestinationConfig)
+	ForwardAsync(ctx context.Context, reqID string, relayName string, relayID string, inbound *http.Request, body []byte, destinations []config.DestinationConfig)
 }
 
 type Config struct {
@@ -94,6 +94,19 @@ func handleRelay(log *slog.Logger, fwd Forwarder, relay config.ResolvedRelay, w 
 		return
 	}
 
+	// Loop prevention:
+	// If we see our own relay id already in X-WebhookRelay-Trace, accept (202)
+	// but drop forwarding so we don't create an infinite loop.
+	if relay.ID != "" && traceContains(req.Header.Get("X-WebhookRelay-Trace"), relay.ID) {
+		_, _ = io.Copy(io.Discard, req.Body)
+		_ = req.Body.Close()
+		log.Warn("self loop detected: dropping forwarding", "relay", relay.Name, "path", relay.ListenPath, "relay_id", relay.ID)
+		w.Header().Set("X-Relay-Dropped", "self_loop")
+		w.WriteHeader(http.StatusAccepted)
+		_, _ = w.Write([]byte("accepted"))
+		return
+	}
+
 	// Read the entire body so we can fan-out to multiple destinations.
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -108,7 +121,7 @@ func handleRelay(log *slog.Logger, fwd Forwarder, relay config.ResolvedRelay, w 
 	// Fire-and-forget forwarding. We do NOT tie it to req.Context() because that
 	// context is canceled when the handler returns.
 	if fwd != nil {
-		fwd.ForwardAsync(context.Background(), reqID, relay.Name, req, body, relay.Destinations)
+		fwd.ForwardAsync(context.Background(), reqID, relay.Name, relay.ID, req, body, relay.Destinations)
 	}
 
 	w.Header().Set("X-Relay-Request-Id", reqID)
@@ -123,6 +136,19 @@ func methodAllowed(method string, allowed []string) bool {
 	m := strings.ToUpper(strings.TrimSpace(method))
 	for _, a := range allowed {
 		if m == strings.ToUpper(strings.TrimSpace(a)) {
+			return true
+		}
+	}
+	return false
+}
+
+func traceContains(trace string, instanceID string) bool {
+	instanceID = strings.TrimSpace(instanceID)
+	if instanceID == "" {
+		return false
+	}
+	for _, p := range strings.Split(trace, ",") {
+		if strings.TrimSpace(p) == instanceID {
 			return true
 		}
 	}
@@ -152,5 +178,3 @@ func newRequestID() (string, error) {
 	enc := base32.StdEncoding.WithPadding(base32.NoPadding)
 	return fmt.Sprintf("%s", strings.ToLower(enc.EncodeToString(b[:]))), nil
 }
-
-

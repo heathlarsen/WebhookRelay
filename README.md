@@ -7,6 +7,9 @@ Tiny Go service that accepts webhook requests and **relays** them to one-or-more
 - **Forwards the request body intact** to each configured destination.
 - Does **not** return destination responses to the caller (it only logs them to stdout).
 - If a relay omits `listen_path`, a **random path is generated on startup** and printed to logs.
+- Adds loop-prevention headers on forwarded requests:
+  - `X-WebhookRelay-Trace`: comma-separated **relay IDs**; each relay appends its own relay ID (so Relay1 can forward into Relay2).
+  - If an inbound request already contains this relay’s ID in `X-WebhookRelay-Trace`, the relay **accepts (202) but drops forwarding**.
 
 ### Quickstart (local)
 
@@ -20,6 +23,12 @@ On startup you’ll see logs that include each relay’s resolved `path`.
 
 ```bash
 docker compose up --build
+```
+
+### Build image (docker)
+
+```bash
+docker build -t webhookrelay:dev .
 ```
 
 ### Config
@@ -41,5 +50,3 @@ Each relay:
   - `url` (required)
   - `method` (optional): override HTTP method sent to destination
   - `headers` (optional): static headers to set on destination request
-
-

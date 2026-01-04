@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base32"
 	"fmt"
 	"path"
@@ -10,6 +11,7 @@ import (
 
 // ResolvedRelay is the runtime representation of a relay with a concrete listen path.
 type ResolvedRelay struct {
+	ID           string
 	Name         string
 	ListenPath   string
 	Methods      []string
@@ -31,6 +33,7 @@ func ResolveRelays(cfg Config) ([]ResolvedRelay, error) {
 		}
 
 		res = append(res, ResolvedRelay{
+			ID:           relayID(lp),
 			Name:         r.Name,
 			ListenPath:   lp,
 			Methods:      append([]string(nil), r.Methods...),
@@ -38,6 +41,15 @@ func ResolveRelays(cfg Config) ([]ResolvedRelay, error) {
 		})
 	}
 	return res, nil
+}
+
+func relayID(listenPath string) string {
+	// Stable for the lifetime of the process (because resolved listen paths are stable).
+	// Hash keeps the trace header compact and avoids leaking the listen path.
+	sum := sha256.Sum256([]byte(listenPath))
+	enc := base32.StdEncoding.WithPadding(base32.NoPadding)
+	// 16 chars is plenty for collision resistance in a small routing table.
+	return strings.ToLower(enc.EncodeToString(sum[:]))[:16]
 }
 
 func joinPaths(basePath, listenPath string) string {

@@ -8,18 +8,17 @@
   "relays": [
     {
       "name": "Pre-defined Listener Example",
-      "listen_path": "/stripe",
+      "listen_path": "/test",
       "methods": ["POST"],
       "destinations": [
-        { "url": "https://example.com/ingest/stripe" },
-        { "url": "https://example.net/stripe" }
+        { "url": "https://webhook.site/7a91afc4-b920-4cce-a84e-75af2075ca5e" },
+        { "url": "http://localhost:8080/hook/test2" }
       ]
     },
     {
+      "listen_path": "/test2",
       "name": "Generated Listener Example",
-      "destinations": [{ "url": "http://internal-service-a/webhooks" }]
+      "destinations": [{ "url": "http://localhost:8080/hook/test" }]
     }
   ]
 }
-
-

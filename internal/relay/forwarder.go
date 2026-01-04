@@ -46,15 +46,15 @@ func NewForwarder(cfg ForwarderConfig) *Forwarder {
 	}
 }
 
-func (f *Forwarder) ForwardAsync(ctx context.Context, reqID string, relayName string, inbound *http.Request, body []byte, destinations []config.DestinationConfig) {
+func (f *Forwarder) ForwardAsync(ctx context.Context, reqID string, relayName string, relayID string, inbound *http.Request, body []byte, destinations []config.DestinationConfig) {
 	// We intentionally do not wait. Each destination forward runs in its own goroutine.
 	for _, d := range destinations {
 		dest := d
-		go f.forwardOne(ctx, reqID, relayName, inbound, body, dest)
+		go f.forwardOne(ctx, reqID, relayName, relayID, inbound, body, dest)
 	}
 }
 
-func (f *Forwarder) forwardOne(parentCtx context.Context, reqID string, relayName string, inbound *http.Request, body []byte, dest config.DestinationConfig) {
+func (f *Forwarder) forwardOne(parentCtx context.Context, reqID string, relayName string, relayID string, inbound *http.Request, body []byte, dest config.DestinationConfig) {
 	select {
 	case f.sem <- struct{}{}:
 		defer func() { <-f.sem }()
@@ -82,6 +82,15 @@ func (f *Forwarder) forwardOne(parentCtx context.Context, reqID string, relayNam
 	outReq.Host = ""
 	outReq.Header.Del("Host")
 	applyHeaderOverrides(outReq.Header, dest.Headers)
+
+	// Loop prevention / trace propagation:
+	// - Each relay appends its relay id to X-WebhookRelay-Trace.
+	// - This lets any relay detect that it's seeing a relayed request it already processed.
+	relayID = strings.TrimSpace(relayID)
+	if relayID != "" {
+		outReq.Header.Set(HeaderTrace, appendTrace(outReq.Header.Get(HeaderTrace), relayID))
+	}
+	outReq.Header.Set(HeaderRequestID, reqID)
 
 	resp, err := f.client.Do(outReq)
 	latencyMS := time.Since(start).Milliseconds()
@@ -139,4 +148,31 @@ func isHopByHopHeader(k string) bool {
 	default:
 		return false
 	}
+}
+
+const (
+	HeaderTrace     = "X-WebhookRelay-Trace"
+	HeaderRequestID = "X-WebhookRelay-Request-Id"
+)
+
+func appendTrace(existing string, instanceID string) string {
+	existing = strings.TrimSpace(existing)
+	instanceID = strings.TrimSpace(instanceID)
+	if instanceID == "" {
+		return existing
+	}
+	if existing == "" {
+		return instanceID
+	}
+
+	parts := strings.Split(existing, ",")
+	out := make([]string, 0, len(parts)+1)
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	out = append(out, instanceID)
+	return strings.Join(out, ",")
 }

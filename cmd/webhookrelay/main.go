@@ -55,7 +55,7 @@ func main() {
 
 	logger.Info("starting server", "listen_addr", cfg.Server.ListenAddr, "relay_count", len(resolved))
 	for _, r := range resolved {
-		logger.Info("relay", "name", r.Name, "path", r.ListenPath, "methods", r.Methods, "destinations", len(r.Destinations))
+		logger.Info("relay", "name", r.Name, "id", r.ID, "path", r.ListenPath, "methods", r.Methods, "destinations", len(r.Destinations))
 	}
 
 	if err := srv.Run(); err != nil {
