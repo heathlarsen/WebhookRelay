@@ -13,7 +13,7 @@ FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
 COPY --from=build /out/webhookrelay /app/webhookrelay
 
-EXPOSE 8080
+EXPOSE 8099
 USER nonroot:nonroot
 ENTRYPOINT ["/app/webhookrelay"]
 

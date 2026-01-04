@@ -36,7 +36,7 @@ docker build -t webhookrelay:dev .
 See [`config/example.json`](config/example.json).
 
 Top-level fields:
-- `server.listen_addr` (required): e.g. `":8080"`
+- `server.listen_addr` (required): e.g. `":8099"`
 - `server.base_path` (optional): e.g. `"/hook"` (prefix for all relay paths)
 - `server.forward_timeout_ms` (optional): per-destination HTTP timeout (default `10000`)
 - `server.concurrency` (optional): max in-flight destination forwards (default `50`)
