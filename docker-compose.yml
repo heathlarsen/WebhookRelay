@@ -3,7 +3,7 @@ services:
     image: webhookrelay/webhookrelay:latest
     build: .
     ports:
-      - "8099:8099"
+      - ${HOST_PORT}:8099
     volumes:
-      - ./config/example.json:/app/config.json:ro
+      - ${CONFIG_DIR}:/app/config:ro
     command: ["-config", "/app/config.json"]
