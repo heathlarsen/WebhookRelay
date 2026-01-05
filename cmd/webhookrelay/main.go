@@ -20,7 +20,7 @@ func main() {
 		configPath = os.Getenv("WEBHOOKRELAY_CONFIG")
 	}
 	if configPath == "" {
-		_, _ = fmt.Fprintln(os.Stderr, "missing config: pass -config or set WEBHOOKRELAY_CONFIG")
+		_, _ = fmt.Fprintln(os.Stderr, "missing config: pass --config or set WEBHOOKRELAY_CONFIG")
 		os.Exit(2)
 	}
 

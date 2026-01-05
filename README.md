@@ -14,7 +14,7 @@ Tiny Go service that accepts webhook requests and **relays** them to one-or-more
 ### Quickstart (local)
 
 ```bash
-go run ./cmd/webhookrelay -config ./config/example.json
+go run ./cmd/webhookrelay --config ./config/example.json
 ```
 
 On startup you’ll see logs that include each relay’s resolved `path`.
