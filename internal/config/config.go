@@ -40,9 +40,10 @@ type RelayConfig struct {
 }
 
 type DestinationConfig struct {
-	URL     string            `json:"url"`
-	Method  string            `json:"method,omitempty"`
-	Headers map[string]string `json:"headers,omitempty"`
+	URL         string            `json:"url"`
+	Method      string            `json:"method,omitempty"`
+	Headers     map[string]string `json:"headers,omitempty"`
+	Description string            `json:"description,omitempty"`
 }
 
 func Load(configPath string) (Config, error) {
