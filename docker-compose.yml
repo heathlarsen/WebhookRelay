@@ -6,4 +6,4 @@ services:
       - ${HOST_PORT}:8099
     volumes:
       - ${CONFIG_DIR}:/app/config:ro
-    command: ["--config", "/app/config.json"]
+    command: ["--config", "/app/config/config.json"]
